@@ -8,7 +8,7 @@ import {
   Alert,
   TouchableWithoutFeedback,
   Keyboard,
-  ActivityIndicator
+  ActivityIndicator,
 } from 'react-native';
 // import Icon from 'react-native-vector-icons/Ionicons';
 import * as firebase from 'firebase';
@@ -31,10 +31,10 @@ export default function LoginScreen({ navigation }) {
   const [loading, setloading] = useState(false);
   // ---------------------------------------ex-------------------------
 
-  const changeEmail = val => {
+  const changeEmail = (val) => {
     setmail(val);
   };
-  const changePassword = val => {
+  const changePassword = (val) => {
     setpass(val);
   };
   const submit = () => {
@@ -56,8 +56,11 @@ export default function LoginScreen({ navigation }) {
       setpass('');
       console.log('LoggedIn!');
     } catch (error) {
-      Alert.alert('error', 'wrong Email or password');
-      setLoading(() => {
+      Alert.alert(
+        'error',
+        'wrong Email or password or check your internet connection'
+      );
+      setloading(() => {
         return false;
       });
     }
@@ -123,13 +126,13 @@ const styles = StyleSheet.create({
     marginTop: 10,
     marginBottom: 10,
     borderBottomWidth: 1,
-    borderBottomColor: 'skyblue'
+    borderBottomColor: 'skyblue',
   },
   load: {
     // flex: 1,
     // backgroundColor: '#fff',
     alignItems: 'center',
     justifyContent: 'center',
-    paddingTop: 250
-  }
+    paddingTop: 250,
+  },
 });

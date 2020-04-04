@@ -71,7 +71,7 @@ export default function SignupScreen({ navigation }) {
       // Alert.alert('Account created go to login screen and login');
     } catch (error) {
       Alert.alert('error', 'no internet');
-      setLoading(() => {
+      setloading(() => {
         return false;
       });
     }
