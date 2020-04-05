@@ -15,7 +15,7 @@ export default function TodoItem({
   navigation,
   pres,
   updata,
-  pressHandler1,
+  pressHandler,
 }) {
   //   const presshand = () => {
   //     navigation.navigate('TaskDetail', item);
@@ -24,13 +24,15 @@ export default function TodoItem({
   //   };
 
   return (
-    <TouchableOpacity onPress={() => pressHandler1(item, updata)}>
+    <TouchableOpacity onPress={() => pressHandler(item, updata)}>
       <View style={styles.item}>
         <TouchableOpacity onPress={() => pres(item.id)}>
           <Icon name='ios-trash' size={30} color={'red'} />
         </TouchableOpacity>
         <View>
-          <Text style={item.isDone ? styles.t : styles.f}>{item.title}</Text>
+          <Text style={item.isDone ? styles.true : styles.false}>
+            {item.title}
+          </Text>
         </View>
         <CheckBox value={item.isDone} onChange={() => press(item.id)} />
       </View>
@@ -87,35 +89,4 @@ const styles = StyleSheet.create({
   //     textDecorationLine: 'line-through'
   //   },
   //   ch: {}
-  item: {
-    padding: 25,
-    marginTop: 14,
-    borderColor: 'black',
-    borderWidth: 1,
-    borderStyle: 'solid',
-    borderRadius: 10,
-    flexDirection: 'row',
-    justifyContent: 'center',
-    alignItems: 'center',
-    textAlign: 'center',
-  },
-  c: {
-    marginLeft: 20,
-  },
-  t: {
-    marginLeft: 50,
-    textDecorationLine: 'line-through',
-    flexShrink: 1,
-    textAlign: 'center',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  f: {
-    marginLeft: 50,
-    textDecorationLine: 'none',
-    flexShrink: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    textAlign: 'center',
-  },
 });
