@@ -63,9 +63,10 @@ import {
 import Icon from 'react-native-vector-icons/Ionicons';
 import AddTodo from '../../components/Addtodo';
 // import TodoItem from '../../components/todoitem';
-// import * as firebase from 'firebase';
+import * as firebase from 'firebase';
 // -----------------------------------------firebas firestore------------------------
-// import 'firebase/firestore';
+import 'firebase/firestore';
+import { decode, encode } from 'base-64';
 // import admin from 'firebase-admin';
 // -----------------------------------------firebase firestore------------------------
 
@@ -80,6 +81,19 @@ export default function todo({ navigation }) {
   //     ),
   //   });
   // }, [navigation]);
+  // --------------------------------------------------------------------------firebasefirestore------------
+  if (!global.btoa) {
+    global.btoa = encode;
+  }
+  if (!global.atob) {
+    global.atob = decode;
+  }
+  const [userId] = useState(firebase.auth().currentUser.uid);
+  var db = firebase.firestore();
+  useEffect(() => {
+    Refresh();
+  }, []);
+  // --------------------------------------------------------------------------firebasefirestore------------
 
   const [data, setTodos] = useState([
     // { title: 'cs101', id: 0, isDone: false },
@@ -88,37 +102,63 @@ export default function todo({ navigation }) {
     // { title: 'cs303', id: 3, isDone: false },
     // { title: 'cs305', id: 4, isDone: false },
   ]);
-  useEffect(() => {
-    fetch('https://jsonplaceholder.typicode.com/todos?userId=1')
-      .then((response) => response.json())
-      .then((response) => {
-        setTodos(response), setLoading(false);
-      })
-      .catch((e) => {
-        console.error(e);
-      });
-  }, []);
+  var user = firebase.auth().currentUser;
+  // useEffect(() => {
+  //   fetch('https://jsonplaceholder.typicode.com/todos?userId=1')
+  //     .then((response) => response.json())
+  //     .then((response) => {
+  //       setTodos(response), setLoading(false);
+  //     })
+  //     .catch((e) => {
+  //       console.error(e);
+  //     });
+  // }, []);
   // -------------------------------------
   // const admin = require('firebase-admin');
 
   // admin.initializeApp({
   //   credential: admin.credential.applicationDefault(),
   // });
-  const [loading, setLoading] = useState(true); // false
+  const [loading, setLoading] = useState(true); // false لما اجرب
   // ---------------------------------------------------firebase firestore---------------------
 
   // ---------------------------------------------------firebase firestore---------------------
 
   const update = (id, title) => {
-    setTodos((prevTodos) => {
-      return prevTodos.filter((todo) => {
-        if ((title.id != id) == false) {
-          todo.title = title;
-        }
-        return true;
+    // ----------------------------------------------------firebase firestore----------------------
+    var todoItem = db.collection('items').where('id', '==', id);
+    todoItem
+      .get()
+      .then((querySnapshot) => {
+        querySnapshot.forEach((doc) => {
+          doc.ref.update({ title: title });
+          console.log('Document successfully updated!');
+        });
+      })
+      .catch(function (error) {
+        console.error('Error updated document: ', error);
       });
+    setTodos((prevTodos) => {
+      return [
+        ...prevTodos.filter((todo) => {
+          if ((todo.id != id) == false) {
+            todo.title = title;
+          }
+          return true;
+        }),
+      ];
     });
-    // navigation.replace('profile');
+    navigation.replace('profile');
+    // --------------------------------------------firebase firestore-----------------------
+    // setTodos((prevTodos) => {
+    //   return prevTodos.filter((todo) => {
+    //     if ((title.id != id) == false) {
+    //       todo.title = title;
+    //     }
+    //     return true;
+    //   });
+    // });
+    // // navigation.replace('profile');
   };
 
   const press = (id) => {
@@ -134,19 +174,54 @@ export default function todo({ navigation }) {
     });
   };
   const pres = (id) => {
+    var todoItem = db.collection('items').where('id', '==', id);
+    todoItem
+      .get()
+      .then((querySnapshot) => {
+        querySnapshot.forEach((doc) => {
+          doc.ref.delete();
+          console.log('Document successfully deleted!');
+        });
+      })
+      .catch(function (error) {
+        console.error('Error removing document: ', error);
+      });
     setTodos((prevTodos) => {
-      return prevTodos.filter((todo) => todo.id != id);
+      return [...prevTodos.filter((todo) => todo.id != id)];
     });
+    // ------------------------firebase firestore-----------------------------------------
+    // setTodos((prevTodos) => {
+    //   return prevTodos.filter((todo) => todo.id != id);
+    // });
+    // -----------------------firebase firestore--------------------------------------------
   };
 
   const submit = (title) => {
     if (title.length > 3) {
       // ----------------------------------firebase firestore--------------------------
-
-      // ----------------------------------firebase firestore--------------------------
+      const todo = {
+        title: title,
+        userId: userId,
+        id: Math.random().toString(),
+        isDone: false,
+        // data: Date.now().toString(),
+      };
+      db.collection('items')
+        .add(todo)
+        .then(function (docRef) {
+          console.log('Document written eith ID: ', docRef.id);
+        })
+        .catch(function (error) {
+          console.error('Error adding doucument', error);
+        });
+      todo.id = Math.random().toString();
       setTodos((prevTodos) => {
-        return [{ title: title, id: Math.random().toString() }, ...prevTodos];
+        return [todo, ...prevTodos];
       });
+      // ----------------------------------firebase firestore--------------------------
+      // setTodos((prevTodos) => {
+      //   return [{ title: title, id: Math.random().toString() }, ...prevTodos];
+      // });
     } else {
       Alert.alert('oops!', 'Todos must be over 3 chars long');
     }
@@ -168,17 +243,34 @@ export default function todo({ navigation }) {
   //   Alert.alert('test');
   // };
   const Refresh = async () => {
-    setLoading(!loading);
-    return fetch('https://jsonplaceholder.typicode.com/todos?userId=1')
-      .then((response) => response.json())
-      .then((response) => {
-        setTodos(response), setLoading(false);
+    // --------------------------------firebase firestore----------------------------------------
+    setLoading(true);
+    db.collection('items')
+      .where('userId', '==', userId)
+      .get()
+      .then((querySnapshot) => {
+        setLoading(false);
+        setTodos([]);
+        querySnapshot.forEach((doc) => {
+          console.log(doc.data());
+          setTodos((prevTodos) => {
+            return [doc.data(), ...prevTodos];
+          });
+        });
       })
-      .catch((e) => {
-        console.error(e);
-      });
+      .catch((error) => console.log(error));
+    // ---------------------------------------------------------firebase firestore-------------
+    // setLoading(!loading);
+    // return fetch('https://jsonplaceholder.typicode.com/todos?userId=1')
+    //   .then((response) => response.json())
+    //   .then((response) => {
+    //     setTodos(response), setLoading(false);
+    //   })
+    //   .catch((e) => {
+    //     console.error(e);
+    //   });
   };
-  const pressHandler1 = (item) => {
+  const pressHandler = (item) => {
     navigation.replace('taskDetail', { item, update });
   };
   return (
@@ -190,69 +282,71 @@ export default function todo({ navigation }) {
     >
       <View style={styles.container}>
         {/* <Header /> */}
-
+        <Text style={{ color: '#015163', left: 20, fontSize: 20 }}>
+          welcome
+        </Text>
         <View style={styles.content}>
+          <Text style={{ right: 55, paddingTop: 0 }}>{user.email}</Text>
           <TouchableOpacity onPress={Refresh}>
             <View style={styles.refrsh}>
-              <Icon name='ios-refresh' size={30} />
+              <Icon name='ios-refresh' size={40} />
             </View>
           </TouchableOpacity>
-          <ScrollView>
-            <AddTodo submit={submit} />
+          {/* <ScrollView> */}
+          <AddTodo submit={submit} />
 
-            <View style={styles.list}>
-              {loading ? (
-                <View style={styles.load}>
-                  <ActivityIndicator size='large' color='#0000ff' />
-                </View>
-              ) : (
-                <FlatList
-                  data={data}
-                  renderItem={({ item }) => (
-                    // <TodoItem
-                    //   item={item}
-                    //   press={press}
-                    //   pres={pres}
-                    //   update={update}
-                    //   pressHandler1={pressHandler1}
-                    //   navigation={navigation}
-                    // />
+          <View style={styles.list}>
+            {loading ? (
+              <View style={styles.load}>
+                <ActivityIndicator size='large' color='#0000ff' />
+              </View>
+            ) : (
+              <FlatList
+                data={data}
+                renderItem={({ item }) => (
+                  // <TodoItem
+                  //   item={item}
+                  //   press={press}
+                  //   pres={pres}
+                  //   update={update}
+                  //   pressHandler={pressHandler}
+                  //   navigation={navigation}
+                  // />
 
-                    <View style={styles.item}>
-                      <TouchableOpacity
-                        onPress={() => pres(item.id)}
-                        style={{ flexDirection: 'row' }}
-                      >
-                        <Icon name='ios-trash' size={30} color={'red'} />
-                      </TouchableOpacity>
-                      <TouchableOpacity
-                        onPress={() =>
-                          navigation.replace('taskDetail', { item, update })
-                        }
-                        style={{
-                          flexDirection: 'row',
-                          flex: 1,
-                        }}
-                      >
-                        <Text style={item.isDone ? styles.true : styles.false}>
-                          {item.title}
-                        </Text>
-                      </TouchableOpacity>
-                      <CheckBox
-                        value={item.isDone}
-                        onChange={() => press(item.id)}
-                      />
-                    </View>
-                  )}
-                />
-              )}
-            </View>
-          </ScrollView>
-          <View style={{ marginTop: 1 }}>
-            <Button title='refresh' />
+                  <View style={styles.item}>
+                    <TouchableOpacity
+                      onPress={() => pres(item.id)}
+                      style={{ flexDirection: 'row' }}
+                    >
+                      <Icon name='ios-trash' size={30} color={'red'} />
+                    </TouchableOpacity>
+                    <TouchableOpacity
+                      onPress={() =>
+                        navigation.replace('taskDetail', { item, update })
+                      }
+                      style={{
+                        flexDirection: 'row',
+                        flex: 1,
+                      }}
+                    >
+                      <Text style={item.isDone ? styles.true : styles.false}>
+                        {item.title}
+                      </Text>
+                    </TouchableOpacity>
+                    <CheckBox
+                      value={item.isDone}
+                      onChange={() => press(item.id)}
+                    />
+                  </View>
+                )}
+              />
+            )}
           </View>
+          {/* </ScrollView> */}
         </View>
-
+        {/* <View style={{ marginTop: 500 }}>
+          <Button title='refresh' onPress={Refresh} />
+        </View> */}
         {/* <TouchableOpacity onPress={presomar}>
           <View style={{ alignItems: 'center', padding: 20 }}>
             <Icon size={30} name='ios-log-out' color='skyblue' />
@@ -268,12 +362,13 @@ export default function todo({ navigation }) {
 const styles = StyleSheet.create({
   container: {
     flex: 0,
-    backgroundColor: '#E7F8FC',
+    // backgroundColor: '#E7F8FC',
     justifyContent: 'center',
+    paddingBottom: 10,
   },
   content: {
     padding: 62,
-    paddingTop: 40,
+    paddingTop: 10, //40
   },
   list: {
     marginTop: 2,
@@ -309,6 +404,8 @@ const styles = StyleSheet.create({
   },
   refrsh: {
     alignItems: 'center',
+
+    bottom: 15,
   },
   load: {
     // flex: 1,

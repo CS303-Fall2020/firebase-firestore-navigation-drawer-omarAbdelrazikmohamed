@@ -58,7 +58,8 @@ export default function LoginScreen({ navigation }) {
     } catch (error) {
       Alert.alert(
         'error',
-        'wrong Email or password or check your internet connection'
+        // 'wrong Email or password or check your internet connection'
+        error.message
       );
       setloading(() => {
         return false;
@@ -76,6 +77,7 @@ export default function LoginScreen({ navigation }) {
       <View>
         {loading ? (
           <View style={styles.load}>
+            <Text style={{ fontSize: 20 }}>Please Waite</Text>
             <ActivityIndicator size='large' color='#0000ff' />
           </View>
         ) : (

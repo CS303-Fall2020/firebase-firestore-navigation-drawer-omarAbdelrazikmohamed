@@ -70,7 +70,7 @@ export default function SignupScreen({ navigation }) {
 
       // Alert.alert('Account created go to login screen and login');
     } catch (error) {
-      Alert.alert('error', 'no internet');
+      Alert.alert('error', error.message);
       setloading(() => {
         return false;
       });
@@ -87,6 +87,7 @@ export default function SignupScreen({ navigation }) {
     >
       {loading ? (
         <View style={styles.load}>
+          <Text style={{ fontSize: 20 }}>Please Waite</Text>
           <ActivityIndicator size='large' color='#0000ff' />
         </View>
       ) : (
